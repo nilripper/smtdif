@@ -1,0 +1,96 @@
+.TH SMTIMP 1
+.SH NAME
+smtimp \- what the features are worth to the learners
+.SH SYNOPSIS
+.B smtimp
+[
+.B \-o
+.I dir
+]
+[
+.B \-n
+.I repeats
+]
+[
+.B \-j
+.I threads
+]
+[
+.B \-r
+.I seed
+]
+[
+.B \-t
+.I seconds
+]
+[
+.I dataset.tsv
+]
+.SH DESCRIPTION
+.I smtimp
+reads a dataset as
+.IR smtdata (1)
+writes one, from the file named or from the standard input, takes the settings
+.IR smtfit (1)
+chose out of
+.I dir
+.RB ( \-o ,
+.B out
+by default),
+deals the rows as its seed
+.RB ( \-r )
+deals them, and writes two tables on the worth of the features back into
+.IR dir .
+.PP
+.B imp.tsv
+is by permutation: a feature is shuffled among the validation rows, and the
+importance of the feature is the score the setting then loses, over
+.I repeats
+shufflings
+.RB ( \-n ,
+five by default).
+The forest and the boosting are asked.
+The counts of a formula move together with its size, and a row with one of
+them shuffled is unlike any row the forest ever saw: so the table costs every
+feature about as much where they move together, and says more of what
+recognizes a family than of what tells the time.
+.PP
+.B ablate.tsv
+is by ablation, and replaces it.
+The features fall into six groups:
+.B size
+(the bytes and the counts of things),
+.B width
+(the bitvector widths of the variables),
+.B depth ,
+.B product
+(the multiplicative and division operators),
+.B array ,
+and
+.BR operators ,
+the counts of all the other operators.
+The forest, and a plane beside it (ridge over the times, logistic over the
+outcome), are each taught over one group alone and over all the features but
+that group, at the setting chosen, and scored on validation: the error of the
+time, or the mean F1.
+.B with
+is the score over the group alone,
+.B without
+the score over all but it, and the line
+.B all
+holds the whole.
+.PP
+The fits run side by side on
+.I threads
+.RB ( \-j ,
+one a processor by default).
+.SH EXAMPLES
+.PP
+.RS
+.nf
+smtimp \-o out dataset.tsv
+.fi
+.RE
+.SH "SEE ALSO"
+.IR smtfit (1),
+.IR smtcal (1)
