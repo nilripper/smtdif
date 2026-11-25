@@ -2,6 +2,7 @@
 pub mod buf;
 pub mod json;
 pub mod sexp;
+pub mod stat;
 pub mod stream;
 pub mod table;
 pub mod tar;
