@@ -2,6 +2,7 @@
 pub mod bayes;
 pub mod buf;
 pub mod data;
+pub mod exp;
 pub mod feat;
 pub mod flags;
 pub mod forest;
