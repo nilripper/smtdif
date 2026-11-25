@@ -1,0 +1,69 @@
+.TH SMTDATA 1
+.SH NAME
+smtdata \- the dataset, from competition results and the features of their formulas
+.SH SYNOPSIS
+.B smtdata
+[
+.B \-s
+.I solver
+]
+[
+.B \-l
+.I logic
+]...
+[
+.B \-f
+.I feats.tsv
+]...
+[
+.I results.json.gz
+]
+.SH DESCRIPTION
+.I smtdata
+reads the results of one edition of SMT-COMP, from the file named or from the standard
+input, in the
+.I json
+the competition publishes, gzipped or not, and writes the dataset: one line a
+benchmark, with what a solver did of it and what the benchmark looks like.
+.PP
+A result is kept when it is of
+.I solver
+.RB ( \-s )
+and of one of the
+.I logics
+.RB ( \-l ,
+as many as given), when the solver gave an answer, and when one of the tables of
+features
+.RB ( \-f ,
+as many as given, and at least one)
+holds the benchmark.
+Of the rest nothing is written, and a line on the standard error counts each
+kind left out.
+.PP
+The columns come as
+.BR id ,\  logic ,\  family ,\  status ,\  result ,\  wall ,\  cpu ,
+then the feature columns in the order of the tables.
+The family is the first folder of the benchmark under its logic,
+and the status is the answer the formula declares, or unknown.
+A timeout and an out of memory both come out as the class
+.BR timeout .
+.SH EXAMPLES
+.PP
+The dataset of one solver over two logics:
+.RS
+.nf
+smtdata \-s cvc5 \-l QF_BV \-l QF_ABV \e
+	\-f QF_BV.tsv \-f QF_ABV.tsv results-sq-2025.json.gz > dataset.tsv
+.fi
+.RE
+.SH FILES
+The tables of features are as
+.IR smtfeat (1)
+writes them, and must agree on their columns.
+.SH SOURCE
+The results are those of the single query track, as processed data at
+.BR https://github.com/SMT-COMP/smt-comp.github.io/tree/master/data .
+.SH "SEE ALSO"
+.IR smtfeat (1),
+.IR smtstat (1),
+.IR smtfit (1)
