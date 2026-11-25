@@ -1,6 +1,7 @@
 /* smtdif: how hard an SMT formula is, judged by its shape */
 pub mod buf;
 pub mod json;
+pub mod rng;
 pub mod sexp;
 pub mod stat;
 pub mod stream;
