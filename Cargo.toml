@@ -1,0 +1,19 @@
+[package]
+name = "smtdif"
+version = "0.0.0"
+edition = "2021"
+description = "smtdif: how hard an SMT formula is, judged by its shape"
+license = "ISC"
+
+[dependencies]
+ruzstd = "0.9"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+# the plan 9 style sets no space between a keyword and its parenthesis: if(x){
+[lints.rust]
+unused_parens = "allow"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"

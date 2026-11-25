@@ -1,0 +1,2 @@
+# every text file as lf, whatever the system: the shell script and the makefile run under posix tools
+* text=auto eol=lf

@@ -1,0 +1,6 @@
+# what cargo builds
+/target
+
+# what make fetches and writes: the archives, the results, and the tables of the experiments
+/data
+/out
