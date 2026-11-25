@@ -1,0 +1,137 @@
+.TH SMTFIT 1
+.SH NAME
+smtfit \- every learner family under cross validation, its tables into a directory
+.SH SYNOPSIS
+.B smtfit
+[
+.B \-o
+.I dir
+]
+[
+.B \-r
+.I seed
+]
+[
+.B \-j
+.I threads
+]
+[
+.B \-m
+.I places
+]
+[
+.B \-t
+.I seconds
+]
+[
+.I dataset.tsv
+]
+.SH DESCRIPTION
+.I smtfit
+reads a dataset as
+.IR smtdata (1)
+writes one, from the file named or from the standard input, and puts the
+questions of the project to it: does the shape of a formula tell
+how long a solver takes over it, and whether it answers at all?
+Three tasks are asked: the time, with a timeout at twice the limit; the time of the
+instances the solver finished only; and the outcome among sat, unsat and timeout.
+Each is asked under two splits of the rows into training, validation and test
+parts, 70, 15 and 15 in a hundred:
+one that keeps every family of benchmarks whole in a part, and one that deals the
+rows out at random.
+.PP
+For each task and split, each family of learners is fitted over a grid of settings
+by cross validation in five folds over the training rows, grouped by family under
+the first split.
+The setting with the least error on the time, or the greatest mean F1 on the outcome,
+is then fitted over all the training rows and tried on validation and on test.
+.PP
+Before a fit, the features that never vary over the training rows and those that
+copy another are dropped; the rest are taken as the logarithm of one plus the value,
+and centered and scaled as the training rows are.
+.PP
+The families are
+.B median
+and
+.BR majority ,
+the guesses to beat;
+.BR ridge ,
+the plane of least squared error;
+.BR logistic ,
+one logistic fit a class against the rest;
+.BR knn ,
+the k nearest rows;
+.BR bayes ,
+a gaussian a class and feature;
+.BR tree ,
+a cart tree;
+.BR forest ,
+three hundred trees on bootstrap samples;
+.BR boost ,
+two hundred rounds of shallow trees fitted to what the rounds before left out;
+and
+.BR svm ,
+a support vector machine over a radial kernel, by dual coordinate descent.
+.PP
+The fits run side by side on
+.I threads
+.RB ( \-j ,
+one a processor by default);
+no more than
+.I places
+of them
+.RB ( \-m ,
+a fifth of the threads by default)
+hold a square matrix over their training rows at once.
+The seed
+.RB ( \-r ,
+2026 by default)
+decides the splits and every draw the fits make, so that a run repeats.
+.PP
+Into
+.I dir
+.RB ( \-o ,
+.B out
+by default)
+go the tables:
+.TP
+.B cv.tsv
+The score of every setting of every family under cross validation.
+.TP
+.B time.tsv
+The chosen settings on validation and on test for the two tasks of time:
+mean and root mean squared error, Spearman correlation and R squared, in the logarithm.
+.TP
+.B outcome.tsv
+The chosen settings for the outcome: accuracy, mean F1, and the F1 of the timeouts.
+.TP
+.B conf.tsv
+The confusion matrices on test.
+.TP
+.B pred.tsv
+What each chosen setting predicted for every row of validation and of test.
+.TP
+.B split.tsv
+The part every row fell in, task by task.
+.PP
+What the features are worth comes of
+.IR smtimp (1),
+over the tables here.
+.SH EXAMPLES
+.PP
+The whole of it:
+.RS
+.nf
+smtfit \-o out dataset.tsv
+.fi
+.RE
+.SH DIAGNOSTICS
+Progress goes to the standard error, a line every two hundred fits.
+A fit that panics brings the run down: a count that does not add up is worth nothing.
+A run takes from three quarters of an hour to an hour and a quarter on twenty processors,
+most of it in the support vector machines, which go four at a time to bound the memory.
+.SH "SEE ALSO"
+.IR smtdata (1),
+.IR smtstat (1),
+.IR smtcal (1),
+.IR smtimp (1)
