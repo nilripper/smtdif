@@ -1,0 +1,130 @@
+.TH SMTFEAT 1
+.SH NAME
+smtfeat \- structural features of SMT formulas
+.SH SYNOPSIS
+.B smtfeat
+[
+.B \-u
+]
+[
+.I file ...
+]
+.SH DESCRIPTION
+.I smtfeat
+reads SMT-LIB formulas and writes, one per formula, the line of a table of
+structural features: all that a solver sees of a formula before it starts to work.
+The first line of the output names the columns, and a tab separates one field from the next.
+.PP
+The input is a formula in the SMT-LIB language, a
+.IR tar (1)
+archive of formulas, or either compressed with
+.IR zstd :
+the first bytes tell them apart.
+An archive holds the benchmarks as
+.IR non-incremental/ logic / family / file ,
+and names each one
+.IR logic / family / file .
+An argument of
+.B \-
+reads the standard input, as does no argument at all.
+.PP
+Every operator is counted once an application:
+.B (bvadd x y)
+holds one
+.BR bvadd ,
+and
+.B ((_ extract 7 0) x)
+one
+.BR extract .
+The head of a term that the vocabulary lacks, as the macro of a benchmark called in a term,
+counts under
+.B other
+and is listed by
+.BR \-u .
+.PP
+The columns before the operators:
+.TP
+.B id, logic, status
+The name of the benchmark, the logic it declares, and the answer it declares: sat, unsat or unknown.
+.TP
+.B bytes
+The size of the formula in bytes.
+.TP
+.B asserts, checks
+The assertions, and the
+.B check-sat
+commands.
+.TP
+.B decls, defs
+The symbols declared, and the commands that define a function.
+.TP
+.B depth
+The deepest nesting of lists in an asserted term or in the body of a definition:
+the number the SMT-LIB catalog gives.
+.TP
+.B nops, mulrat
+The applications of every operator, and the share of the multiplicative and division ones among them.
+.TP
+.B bits, wmax, wdist
+The bitvector widths of the declared variables: their sum, their largest, and how many differ.
+.TP
+.B arrays
+The declared variables of array sort.
+.TP
+.B bvlits
+The bitvector literals.
+.TP
+.B other
+The applications of symbols the vocabulary lacks.
+.PP
+Then a count a column for every operator and binder: the core ones as
+.B =
+and
+.BR let ,
+the bitvector ones as
+.B bvmul
+and
+.BR extract ,
+and
+.B select
+and
+.B store
+of arrays.
+.SH EXAMPLES
+.PP
+The features of a whole archive:
+.RS
+.nf
+smtfeat QF_BV.tar.zst > QF_BV.tsv
+.fi
+.RE
+.PP
+The heads the vocabulary lacks, each with its count, for
+.IR sort (1)
+and
+.IR awk (1)
+to sum:
+.RS
+.nf
+smtfeat \-u QF_ABV.tar.zst
+.fi
+.RE
+.PP
+One formula off the hand, through the standard input:
+.RS
+.nf
+echo \(aa(assert (bvadd x y))\(aa | smtfeat
+.fi
+.RE
+.SH DIAGNOSTICS
+A stream that is neither a formula nor an archive yields a table of zeros, not a complaint:
+the scanner reads tokens, and does not judge them.
+.SH SOURCE
+The archives come from the SMT-LIB release on Zenodo.
+The vocabulary covers the core, bitvector and array theories of SMT-LIB;
+one for other theories is a longer table in
+.IR src/feat.rs .
+.SH "SEE ALSO"
+.IR smtdata (1),
+.IR smtstat (1),
+.IR smtfit (1)
