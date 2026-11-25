@@ -9,6 +9,7 @@ pub mod json;
 pub mod knn;
 pub mod lin;
 pub mod model;
+pub mod prep;
 pub mod rng;
 pub mod sexp;
 pub mod split;
