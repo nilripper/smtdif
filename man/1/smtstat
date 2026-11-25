@@ -1,0 +1,53 @@
+.TH SMTSTAT 1
+.SH NAME
+smtstat \- what the dataset holds, in tables of text
+.SH SYNOPSIS
+.B smtstat
+[
+.B \-t
+.I seconds
+]
+[
+.I dataset.tsv
+]
+.SH DESCRIPTION
+.I smtstat
+reads a dataset as
+.IR smtdata (1)
+writes one, from the file named or from the standard input, and describes it,
+a table after a line that says what it holds.
+A tab separates one field from the next, so that
+.IR awk (1)
+may take any table apart.
+.PP
+The tables, in order: the dataset by count; the text columns and the values each takes;
+the numeric columns with their least value, quartiles, median, greatest value, mean and
+deviation, the time in seconds and in its base 10 logarithm;
+the logarithm by bins a tenth wide, with the timeouts in each bin;
+the outcomes by logic; the families, largest first;
+and the Spearman correlation of every feature with the targets.
+.PP
+The regression target is the base 10 logarithm of the wall clock time, a timeout
+counted at twice
+.I seconds
+.RB ( \-t ,
+1200 by default).
+.SH EXAMPLES
+.PP
+The description of a dataset:
+.RS
+.nf
+smtstat dataset.tsv > stat.txt
+.fi
+.RE
+.PP
+The ten features whose Spearman correlation with the time is the highest:
+.RS
+.nf
+awk \-F\(rs\(rst \-v OFS=\(rs \(rs \(aa/^feature/{t=1; next} t && NF==4 {print $2, $1}\(aa stat.txt \e
+	| sort \-k1,1gr | sed 10q
+.fi
+.RE
+.SH "SEE ALSO"
+.IR smtdata (1),
+.IR smtfit (1)
