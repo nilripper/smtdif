@@ -1,0 +1,155 @@
+smtdif: how hard an SMT formula is, judged by its shape
+========================================================
+
+smtdif predicts what an SMT solver will do with a formula, and how long it
+will take, from the shape of the formula alone: 67 counts read off its syntax
+before any solving starts.
+
+The finding is that the shape carries the answer only as far as the family of
+benchmarks goes.  With the instances dealt at random among training and test,
+a random forest predicts the log10 solve time of cvc5 with a mean absolute
+error of 0.16 over 18,271 formulas, and Spearman 0.96.  With every family kept
+whole in one part, no learner beats the median of the training times.  The
+features order the formulas of a family and recognize where a formula came
+from, but do not set the time of a family the model never saw: one solved
+instance of the new family recovers most of what was lost.
+
+
+The programs
+------------
+
+Six filters over text, each doing one thing, written in Rust with no framework
+and two crates, to undo zstd and gzip.  Each reads the file named after its
+flags, or else the standard input, and writes tables of tab separated text.
+
+  smtfeat  the features of every formula fed to it: a formula, or a tar
+           archive of them, zstd compressed or not, never unpacked on disk
+  smtdata  the dataset: the competition results of one solver joined with the
+           features of their formulas
+  smtstat  what the dataset holds, in tables
+  smtfit   every family of learners under cross validation, under both splits
+           and all three tasks
+  smtcal   what a few instances of a family new to the model are worth
+  smtimp   what the features are worth: by permutation, and by ablation of
+           groups of them
+
+The learners are written here too, on one interface: the median and the
+majority as the guesses to beat, ridge, one logistic fit a class, the k
+nearest neighbors, gaussian naive Bayes, a CART tree, a random forest,
+gradient boosting, and a support vector machine over a radial kernel.  Each
+was checked against scikit-learn on the same rows with the same settings:
+ridge agrees to the last digit, and the others stay within 0.02 of error on
+the time.
+
+
+Building and running
+--------------------
+
+Needs cargo, make and a POSIX shell with curl and md5sum.
+
+  make          the six programs, under target/release
+  make test     the 53 tests of every stage
+  make dataset  the dataset, out of the archives and the competition results
+  make stats    what the dataset holds, in out/stat.txt
+  make fit      every experiment, its tables in out/
+  make calib    the calibration of the predictions by family, out/calib.tsv
+  make worth    what the features are worth, out/imp.tsv and out/ablate.tsv
+
+The first run fetches 1.9 GB from Zenodo and GitHub (get.sh, eight ranges at
+a time; make checks the md5 of each archive), extracts the features in a few
+minutes, and then spends about an hour on twenty processors in smtfit, most
+of it in the support vector machines.  Every stage writes files that the next
+stage reads, and make runs a stage again only when what it reads is newer
+than what it wrote:
+
+  smtfeat QF_BV.tar.zst             > feat/QF_BV.tsv
+  smtfeat QF_ABV.tar.zst            > feat/QF_ABV.tsv
+  smtdata -s cvc5 -l QF_BV -l QF_ABV -f feat/QF_BV.tsv -f feat/QF_ABV.tsv \
+          results-sq-2025.json.gz > dataset.tsv
+  smtstat dataset.tsv               > out/stat.txt
+  smtfit  -o out dataset.tsv        # writes time.tsv, outcome.tsv, pred.tsv
+  smtcal  out/pred.tsv              > out/calib.tsv
+  smtimp  -o out dataset.tsv        # writes imp.tsv, ablate.tsv
+
+The data end in data/ and the tables in out/.  The seed 2026 decides every
+split and every draw, and a run repeats: a second run reproduced all ten
+tables byte for byte.
+
+make clean removes out/ and the build.
+
+On Windows the programs carry .exe; make knows the suffix from the system, or
+else from the name of the cargo at hand.  make runs there under WSL or any
+POSIX shell, with the directory of the Windows cargo on the PATH and
+CARGO=cargo.exe.  The programs take their input by name because the standard
+input does not always cross that boundary whole.
+
+
+The data
+--------
+
+The formulas are the SMT-LIB release of 2025 (Zenodo, record 16740866), in the
+two logics QF_BV and QF_ABV.  The times are the cvc5 results of SMT-COMP 2025,
+single query track.  The dataset holds 18,271 benchmarks of 58 families: 9,833
+sat, 7,442 unsat and 996 timeouts (5.5%: 962 by time, 34 by memory), with no
+empty cell.
+
+An instance is a benchmark.  The features fall in six groups: size (the bytes
+and the counts of assertions, declarations, definitions, operators and
+literals), the bitvector widths of the variables, the nesting depth of terms,
+the multiplicative operators, the arrays, and the count of each of the other
+operators.  The regression target is log10 of the wall clock time, a timeout
+counted at twice the limit.  The classification target is the outcome among
+sat, unsat and timeout.
+
+The extractor was checked against the SMT-LIB catalog on 222 formulas of 22
+families: size, assertions, declarations and depth agree on all, and so do all
+2,701 counts of operators.
+
+
+The protocol
+------------
+
+The rows are split 70, 15 and 15 into training, validation and test, twice:
+at random, and by family, every family whole in one part.  Each family of
+learners is fitted over a grid of settings by cross validation in five folds
+over the training rows; the chosen setting is fitted again over all of them
+and measured on validation and on test.  Validation chooses the learner, and
+test measures it once.  Time is scored by mean absolute error and Spearman
+correlation in the logarithm; the outcome by accuracy, mean F1 and the F1 of
+the timeouts.
+
+
+What came of it
+---------------
+
+                        time, MAE        Spearman     outcome, mean F1
+  random split, forest   0.159            0.958        0.814
+  random split, kNN      0.164            0.941        0.831
+  by family, median      0.765            0.000        0.298
+  by family, best        1.063 (ridge)    0.652        0.292 (Bayes)
+
+Under the split by family, 63% of the test rows are one family,
+20221012-MCMPC, which cvc5 solves in 0.37 s and the forest puts at 8 s.  With
+one solved instance of each new family to set an offset, the forest falls from
+1.24 to 0.54, and orders the formulas of a family it never saw with Spearman
+0.69.  The features that carry the signal are size and the counts of
+operators; the multiplicative operators and the depth add nothing that the
+others lack.
+
+
+The layout
+----------
+
+  src/         the library: the readers (buf, sexp, tar, stream, json, table),
+               the features (feat), the learners (lin, knn, bayes, tree,
+               forest, svm), the experiment (split, prep, exp), and the rest
+  src/bin/     the six programs
+  man/1/       their manual pages
+  data/        the archives, the results and the tables out of them
+  out/         the tables of the experiments
+
+data/ and out/ are written by make, not source.  Each program documents
+itself: man ./man/1/smtfeat, and so on.
+
+The code is under the ISC license (LICENSE).  The benchmarks and the results
+belong to SMT-LIB and SMT-COMP, under their own licenses.
