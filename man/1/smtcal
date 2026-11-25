@@ -1,0 +1,56 @@
+.TH SMTCAL 1
+.SH NAME
+smtcal \- what a few instances of a family new to the model are worth to its predictions
+.SH SYNOPSIS
+.B smtcal
+[
+.B \-k
+.I k,k,...
+]
+[
+.I pred.tsv
+]
+.SH DESCRIPTION
+.I smtcal
+reads the predictions
+.IR smtfit (1)
+wrote on test, from the file named or from the standard input, and asks how
+much of their error under the split by family is
+the level of a family the model never saw.
+For each split, task and family of learners, the first
+.I k
+instances of every family, in the order of their names, set the family's offset:
+the median of what the model missed on them.
+The other instances are then judged with the offset added.
+With
+.I k
+zero the offset is none, and the score is that of the predictions as they came.
+.PP
+The family of an instance is the first folder of its name under the logic.
+A task of classes has no offset and is left alone.
+.PP
+The columns, a line a split, task, family of learners and
+.IR k :
+the instances judged; the mean and root mean squared error; the Spearman
+correlation over them all; and
+.BR rho_within ,
+the same correlation inside each family of three instances or more, weighed
+by their number, which no offset changes and so tells what the features order
+in a family never seen.
+.PP
+The values of
+.I k
+come as
+.B \-k
+.IR k,k,... ,
+zero by default along with 1, 2, 5, 10, 20 and 50.
+.SH EXAMPLES
+.PP
+.RS
+.nf
+smtcal out/pred.tsv > out/calib.tsv
+.fi
+.RE
+.SH "SEE ALSO"
+.IR smtfit (1),
+.IR smtimp (1)
