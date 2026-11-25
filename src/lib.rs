@@ -1,16 +1,23 @@
 /* smtdif: how hard an SMT formula is, judged by its shape */
+pub mod bayes;
 pub mod buf;
 pub mod data;
 pub mod feat;
 pub mod flags;
+pub mod forest;
 pub mod json;
+pub mod knn;
+pub mod lin;
+pub mod model;
 pub mod rng;
 pub mod sexp;
 pub mod split;
 pub mod stat;
 pub mod stream;
+pub mod svm;
 pub mod table;
 pub mod tar;
+pub mod tree;
 
 use std::eprintln;
 use std::fs::File;
