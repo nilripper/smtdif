@@ -6,6 +6,7 @@ pub mod flags;
 pub mod json;
 pub mod rng;
 pub mod sexp;
+pub mod split;
 pub mod stat;
 pub mod stream;
 pub mod table;
